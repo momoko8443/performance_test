@@ -1,17 +1,42 @@
 <template>
   <div>
-    <span>{{items.length}}</span>
-    <button @click="loadProfiles">Load data from Backend</button>
+    <div>
+      <h3>{{dataSet.length}}</h3>
+      <a-button type="primary" @click="loadProfiles">Load data from Backend</a-button>
+    </div>
+     <div class="filterBar">
+      <a-select :value="location" style="width: 120px" @change="handleLocationChange">
+        <a-select-option value="Bangladesh">Bangladesh</a-select-option>
+        <a-select-option value="China">China</a-select-option>
+        <a-select-option value="United States">United States</a-select-option>
+        <a-select-option value="Hong Kong">Hong Kong</a-select-option>
+        <a-select-option value="SRI LANKA">SRI LANKA</a-select-option>
+        <a-select-option value="Quarry">Quarry</a-select-option>
+        <a-select-option value="Australia">Australia</a-select-option>
+      </a-select>
+    </div>
     <hr>
     <div>
-        <div class="itemRow" v-for="item in showItems" :key="item.company_id">
-            <img class="logo" :src="item.image_url">
-            <span>{{item.company_name}}</span>
-            <span>{{item.primary_location}}</span>
-            <span>{{item.description}}</span>
-            <span>{{item.link_count}}</span>
-            <span>{{item.degree_type}}</span>
-        </div>
+        <a-row class="itemRow" v-for="(item,index) in showItems" :key="item.company_id + index">
+            <a-col :span="4">
+              <img class="logo" :src="item.image_url">
+            </a-col>
+            <a-col :span="4">
+              <span>{{item.company_name}}</span>
+            </a-col>
+             <a-col :span="4">
+              <span>{{item.primary_location}}</span>
+            </a-col>
+            <a-col :span="4">
+              <span>{{item.description}}</span>
+            </a-col>
+             <a-col :span="4">
+              <span>{{item.link_count}}</span>
+             </a-col>
+             <a-col :span="4">
+              <span>{{item.degree_type}}</span>
+             </a-col>
+        </a-row>
     </div>
   </div>
 </template>
@@ -20,18 +45,49 @@ import axios from "axios";
 export default {
     data(){
         return {
-            items: [],
-            showItems: []
+            dataSet: [],
+            showItems: [],
+            location: ''
         }
     },
   methods: {
     loadProfiles() {
      let self = this;
       axios.get("/api/profiles").then(result => {
-        self.items = result.data;
-        self.showItems = self.items.slice(0,20);
+        self.dataSet = self.dataSet.concat(result.data);
+        self.showItems = self.dataSet.slice(0,20);
       });
-    }
+    },
+    handleLocationChange(value){
+      console.time('filter');
+      const filter_result = this.dataSet.filter((item)=>{
+        if(!item.degree){
+          if(item.degree_type === '2nd'){
+            item.degree = 1;
+          }else if(item.degree_type === '3rd'){
+            item.degree = 2;
+          }else{
+            item.degree = 3;
+          }
+        }
+        return item.primary_location === value;
+      });
+
+      filter_result.sort((a, b)=>{
+        if(a.degree > b.degree){
+          return 1;
+        }
+        if(a.degree < b.degree){
+          return -1;
+        }
+        if(a.degree === b.degree){
+          return a.link_count - b.link_count;
+        }
+      });
+      console.timeEnd('filter');
+      this.showItems = filter_result.slice(0,20);;
+    },
+    
   }
 };
 </script>
@@ -47,7 +103,10 @@ export default {
         width: 50px;
         height: 50px;
     }
-    span{
-        max-width:300px; 
+    .filterBar{
+      display: flex;
+      justify-content: flex-start;
+      padding: 20px;
     }
+
 </style>
