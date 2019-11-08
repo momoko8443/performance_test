@@ -5,7 +5,7 @@ const dataSet = generateData(profiles, 500);
 const app = express();
 
 
-
+app.use(express.static('ui/dist'));
 app.get('/api/profiles', (req, res) => {
     res.send(dataSet);
 });
